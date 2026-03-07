@@ -123,12 +123,7 @@ export function renderClaudeSettingsLocalExample(): Record<string, unknown> {
 
 export function renderClaudeMcp(): Record<string, unknown> {
   return {
-    mcpServers: {
-      example: {
-        command: 'node',
-        args: ['./scripts/example-mcp.js'],
-      },
-    },
+    mcpServers: {},
   };
 }
 
@@ -277,12 +272,7 @@ This directory configures Cursor for ${ctx.name}.
 
 export function renderCursorMcp(): Record<string, unknown> {
   return {
-    mcpServers: {
-      example: {
-        command: 'node',
-        args: ['./scripts/example-mcp.js'],
-      },
-    },
+    mcpServers: {},
   };
 }
 

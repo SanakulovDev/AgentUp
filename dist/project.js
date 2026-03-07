@@ -13,7 +13,8 @@ export function emptyProjectInfo(name) {
     };
 }
 export function detectProjectInfo(projectRoot) {
-    const info = emptyProjectInfo(path.basename(projectRoot));
+    const rootDirName = path.basename(projectRoot);
+    const info = emptyProjectInfo(rootDirName);
     const packageJsonPath = path.join(projectRoot, 'package.json');
     const composerJsonPath = path.join(projectRoot, 'composer.json');
     const pyProjectPath = path.join(projectRoot, 'pyproject.toml');
@@ -68,7 +69,7 @@ export function detectProjectInfo(projectRoot) {
         info.language = 'php';
         info.languageVersion ??= '8.3';
         const composerName = asString(composer.name);
-        if (!info.name && composerName) {
+        if (composerName && (!info.name || info.name === rootDirName)) {
             info.name = composerName.split('/')[1] || composerName;
         }
         if (!info.description) {

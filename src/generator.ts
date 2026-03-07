@@ -31,7 +31,9 @@ export function generateAgentUpFiles(answers: InitAnswers): string[] {
   const ctx = buildTemplateContext(answers);
 
   maybeWriteFile(answers, path.join(answers.projectRoot, 'AGENTS.md'), renderAgentsMd(ctx), written);
-  maybeWriteFile(answers, path.join(answers.projectRoot, 'CLAUDE.md'), renderClaudeRoot(), written);
+  if (answers.createClaudeDir) {
+    maybeWriteFile(answers, path.join(answers.projectRoot, 'CLAUDE.md'), renderClaudeRoot(), written);
+  }
   maybeWriteFile(
     answers,
     path.join(answers.projectRoot, '.agentup.json'),
@@ -61,13 +63,14 @@ function createClaudeScaffold(
     base,
     path.join(base, 'rules'),
     path.join(base, 'commands'),
-    path.join(base, 'skills', 'plan-workflow'),
-    path.join(base, 'skills', 'review-workflow'),
-    path.join(base, 'skills', 'test-workflow'),
-    path.join(base, 'skills', 'code-workflow'),
     path.join(base, 'agents'),
     path.join(base, 'hooks'),
   ];
+
+  if (answers.roles.includes('plan')) dirs.push(path.join(base, 'skills', 'plan-workflow'));
+  if (answers.roles.includes('review')) dirs.push(path.join(base, 'skills', 'review-workflow'));
+  if (answers.roles.includes('test')) dirs.push(path.join(base, 'skills', 'test-workflow'));
+  if (answers.roles.includes('code')) dirs.push(path.join(base, 'skills', 'code-workflow'));
 
   dirs.forEach(ensureDir);
 
@@ -132,14 +135,15 @@ function createCursorScaffold(
     base,
     path.join(base, 'rules'),
     path.join(base, 'commands'),
-    path.join(base, 'skills', 'plan-workflow'),
-    path.join(base, 'skills', 'review-workflow'),
-    path.join(base, 'skills', 'test-workflow'),
-    path.join(base, 'skills', 'code-workflow'),
     path.join(base, 'agents'),
     path.join(base, 'docs'),
     path.join(base, 'hooks'),
   ];
+
+  if (answers.roles.includes('plan')) dirs.push(path.join(base, 'skills', 'plan-workflow'));
+  if (answers.roles.includes('review')) dirs.push(path.join(base, 'skills', 'review-workflow'));
+  if (answers.roles.includes('test')) dirs.push(path.join(base, 'skills', 'test-workflow'));
+  if (answers.roles.includes('code')) dirs.push(path.join(base, 'skills', 'code-workflow'));
 
   dirs.forEach(ensureDir);
 

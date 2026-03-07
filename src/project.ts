@@ -16,7 +16,8 @@ export function emptyProjectInfo(name: string): ProjectInfo {
 }
 
 export function detectProjectInfo(projectRoot: string): ProjectInfo {
-  const info = emptyProjectInfo(path.basename(projectRoot));
+  const rootDirName = path.basename(projectRoot);
+  const info = emptyProjectInfo(rootDirName);
 
   const packageJsonPath = path.join(projectRoot, 'package.json');
   const composerJsonPath = path.join(projectRoot, 'composer.json');
@@ -77,7 +78,7 @@ export function detectProjectInfo(projectRoot: string): ProjectInfo {
     info.languageVersion ??= '8.3';
 
     const composerName = asString(composer.name);
-    if (!info.name && composerName) {
+    if (composerName && (!info.name || info.name === rootDirName)) {
       info.name = composerName.split('/')[1] || composerName;
     }
     if (!info.description) {

@@ -113,12 +113,7 @@ export function renderClaudeSettingsLocalExample() {
 }
 export function renderClaudeMcp() {
     return {
-        mcpServers: {
-            example: {
-                command: 'node',
-                args: ['./scripts/example-mcp.js'],
-            },
-        },
+        mcpServers: {},
     };
 }
 export function renderClaudeProjectRule(ctx) {
@@ -251,12 +246,7 @@ This directory configures Cursor for ${ctx.name}.
 }
 export function renderCursorMcp() {
     return {
-        mcpServers: {
-            example: {
-                command: 'node',
-                args: ['./scripts/example-mcp.js'],
-            },
-        },
+        mcpServers: {},
     };
 }
 export function renderCursorRule(kind, ctx) {

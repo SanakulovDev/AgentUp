@@ -1,5 +1,14 @@
-import { renderAgentsMd, buildTemplateContext, renderCommandList } from './templates.js';
-import { emptyProjectInfo, scriptCommand } from './project.js';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import {
+  renderAgentsMd,
+  buildTemplateContext,
+  renderCommandList,
+  renderClaudeMcp,
+  renderCursorMcp,
+} from './templates.js';
+import { emptyProjectInfo, scriptCommand, detectProjectInfo } from './project.js';
 import { assert, normalizeOptional, splitCsv } from './utils.js';
 import type { InitAnswers } from './types.js';
 
@@ -27,9 +36,43 @@ export function runSelfTests(): void {
   const fallbackList = renderCommandList({});
   assert(fallbackList === '- No commands configured yet', 'renderCommandList should provide fallback text');
 
+  const claudeMcp = renderClaudeMcp();
+  assert(
+    'mcpServers' in claudeMcp &&
+      typeof claudeMcp.mcpServers === 'object' &&
+      claudeMcp.mcpServers !== null &&
+      Object.keys(claudeMcp.mcpServers as Record<string, unknown>).length === 0,
+    'renderClaudeMcp should not reference missing example scripts',
+  );
+
+  const cursorMcp = renderCursorMcp();
+  assert(
+    'mcpServers' in cursorMcp &&
+      typeof cursorMcp.mcpServers === 'object' &&
+      cursorMcp.mcpServers !== null &&
+      Object.keys(cursorMcp.mcpServers as Record<string, unknown>).length === 0,
+    'renderCursorMcp should not reference missing example scripts',
+  );
+
   const projectInfo = emptyProjectInfo('demo');
   assert(projectInfo.repoType === 'unknown', 'emptyProjectInfo should set unknown repo type');
   assert(projectInfo.name === 'demo', 'emptyProjectInfo should preserve name');
+
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'agentup-selftest-'));
+  try {
+    const phpRoot = path.join(tmpRoot, 'php-project');
+    fs.mkdirSync(phpRoot, { recursive: true });
+    fs.writeFileSync(
+      path.join(phpRoot, 'composer.json'),
+      JSON.stringify({ name: 'acme/demo-app', description: 'Composer app' }, null, 2),
+      'utf8',
+    );
+    const detectedPhp = detectProjectInfo(phpRoot);
+    assert(detectedPhp.name === 'demo-app', 'detectProjectInfo should infer name from composer package');
+    assert(detectedPhp.description === 'Composer app', 'detectProjectInfo should infer description from composer');
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
 
   const answers: InitAnswers = {
     projectRoot: '/tmp/demo',

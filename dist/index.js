@@ -48,9 +48,9 @@ function printHelp() {
 AgentUp CLI
 
 Usage:
-  agentup init
-  agentup __selftest
-  agentup --help
+  agentup-cli init
+  agentup-cli __selftest
+  agentup-cli --help
 `);
 }
 async function collectAnswers() {

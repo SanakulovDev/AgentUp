@@ -4,7 +4,7 @@
     "description": "CLI that scaffolds AI agent context files for developer tools and IDEs",
     "type": "module",
     "bin": {
-      "agentup": "dist/index.js"
+      "agentup-cli": "dist/index.js"
     },
     "files": [
       "dist",
