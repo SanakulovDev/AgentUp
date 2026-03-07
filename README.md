@@ -44,7 +44,51 @@ The CLI prompts you for:
 ```bash
 agentup-cli init        # Interactive scaffolding
 agentup-cli __selftest  # Built-in self-tests
+agentup-cli --version   # Print installed CLI version
 agentup-cli --help      # Help
+```
+
+## Version Check
+```bash
+agentup-cli --version
+npm view agentup-cli@latest version
+```
+
+## Uninstall
+```bash
+npm uninstall -g agentup-cli
+hash -r
+```
+
+If `agentup-cli` is still found in your shell after uninstall, check:
+```bash
+which -a agentup-cli
+```
+
+## Automated npm Release (GitHub Actions)
+This repository includes a workflow at `.github/workflows/publish.yml`.
+Single source of truth for release version is `package.json -> version`.
+
+It publishes to npm automatically when you push a version tag like:
+```bash
+VERSION=$(npm run -s version:show)
+git tag "v$VERSION"
+git push origin "v$VERSION"
+```
+
+Before publishing, the workflow:
+- installs dependencies (`npm ci`)
+- builds the project (`npm run build`)
+- verifies `tag version == package.json version`
+
+Required setup in GitHub:
+- add repository secret `NPM_TOKEN` (npm automation token)
+
+Version bump shortcuts:
+```bash
+npm run release:patch
+npm run release:minor
+npm run release:major
 ```
 
 ## Example Output Structure

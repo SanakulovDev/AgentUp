@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import fs from 'fs';
 import process from 'process';
 import path from 'path';
 import {
@@ -52,6 +53,11 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command && ['-v', '--version', 'version'].includes(command)) {
+    printVersion();
+    return;
+  }
+
   if (!command || ['-h', '--help', 'help'].includes(command)) {
     printHelp();
     return;
@@ -63,7 +69,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  intro(pc.bgCyan(pc.black(' AgentUp ')) + ' ' + pc.dim('bootstrap AI-agent project context'));
+  intro(renderIntroBanner());
 
   const answers = await collectAnswers();
   const s = spinner();
@@ -90,8 +96,37 @@ AgentUp CLI
 Usage:
   agentup-cli init
   agentup-cli __selftest
+  agentup-cli --version
   agentup-cli --help
 `);
+}
+
+function printVersion(): void {
+  console.log(getCliVersion());
+}
+
+function getCliVersion(): string {
+  try {
+    const pkgPath = new URL('../package.json', import.meta.url);
+    const pkgRaw = fs.readFileSync(pkgPath, 'utf8');
+    const pkg = JSON.parse(pkgRaw) as { version?: unknown };
+    return typeof pkg.version === 'string' ? pkg.version : 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+function renderIntroBanner(): string {
+  const lines = [
+    '------------------------------------------------------------',
+    '      _    ____ _____ _   _ _____ _   _ ____      ____ _     ___ ',
+    '     / \\  / ___| ____| \\ | |_   _| | | |  _ \\    / ___| |   |_ _|',
+    '    / _ \\| |  _|  _| |  \\| | | | | | | | |_) |  | |   | |    | | ',
+    '   / ___ \\ |_| | |___| |\\  | | | | |_| |  __/   | |___| |___ | | ',
+    '  /_/   \\_\\____|_____|_| \\_| |_|  \\___/|_|       \\____|_____|___|',
+    '------------------------------------------------------------',
+  ];
+  return `${pc.cyan(lines.join('\n'))}\n${pc.dim('bootstrap AI-agent project context')}`;
 }
 
 async function collectAnswers(): Promise<InitAnswers> {

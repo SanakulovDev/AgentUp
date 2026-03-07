@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import fs from 'fs';
 import process from 'process';
 import path from 'path';
 import { cancel, intro, isCancel, log, multiselect, outro, select, spinner, text, } from '@clack/prompts';
@@ -17,6 +18,10 @@ async function main() {
         runSelfTests();
         return;
     }
+    if (command && ['-v', '--version', 'version'].includes(command)) {
+        printVersion();
+        return;
+    }
     if (!command || ['-h', '--help', 'help'].includes(command)) {
         printHelp();
         return;
@@ -26,7 +31,7 @@ async function main() {
         printHelp();
         process.exit(1);
     }
-    intro(pc.bgCyan(pc.black(' AgentUp ')) + ' ' + pc.dim('bootstrap AI-agent project context'));
+    intro(renderIntroBanner());
     const answers = await collectAnswers();
     const s = spinner();
     s.start('Generating project agent scaffolding...');
@@ -50,8 +55,35 @@ AgentUp CLI
 Usage:
   agentup-cli init
   agentup-cli __selftest
+  agentup-cli --version
   agentup-cli --help
 `);
+}
+function printVersion() {
+    console.log(getCliVersion());
+}
+function getCliVersion() {
+    try {
+        const pkgPath = new URL('../package.json', import.meta.url);
+        const pkgRaw = fs.readFileSync(pkgPath, 'utf8');
+        const pkg = JSON.parse(pkgRaw);
+        return typeof pkg.version === 'string' ? pkg.version : 'unknown';
+    }
+    catch {
+        return 'unknown';
+    }
+}
+function renderIntroBanner() {
+    const lines = [
+        '------------------------------------------------------------',
+        '      _    ____ _____ _   _ _____ _   _ ____      ____ _     ___ ',
+        '     / \\  / ___| ____| \\ | |_   _| | | |  _ \\    / ___| |   |_ _|',
+        '    / _ \\| |  _|  _| |  \\| | | | | | | | |_) |  | |   | |    | | ',
+        '   / ___ \\ |_| | |___| |\\  | | | | |_| |  __/   | |___| |___ | | ',
+        '  /_/   \\_\\____|_____|_| \\_| |_|  \\___/|_|       \\____|_____|___|',
+        '------------------------------------------------------------',
+    ];
+    return `${pc.cyan(lines.join('\n'))}\n${pc.dim('bootstrap AI-agent project context')}`;
 }
 async function collectAnswers() {
     const rootInput = await text({
