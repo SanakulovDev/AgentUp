@@ -1,0 +1,22 @@
+{
+    "name": "agentup",
+    "version": "0.1.0",
+    "type": "module",
+    "bin": {
+      "agentup": "dist/index.js"
+    },
+    "scripts": {
+      "build": "tsc",
+      "dev": "tsx src/index.ts",
+      "selftest": "tsx src/index.ts __selftest"
+    },
+    "dependencies": {
+      "@clack/prompts": "^0.8.2",
+      "picocolors": "^1.1.1"
+    },
+    "devDependencies": {
+      "@types/node": "^22.13.10",
+      "tsx": "^4.19.3",
+      "typescript": "^5.8.2"
+    }
+  }

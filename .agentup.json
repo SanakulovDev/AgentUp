@@ -1,0 +1,41 @@
+{
+  "$schema": "https://agentup.dev/schema/agentup.json",
+  "generatedAt": "2026-03-07T08:18:06.562Z",
+  "providers": [
+    "codex"
+  ],
+  "ide": "cursor",
+  "roles": [
+    "plan",
+    "review",
+    "test",
+    "code"
+  ],
+  "project": {
+    "name": "AgentUp",
+    "description": "My AgentUp projects",
+    "dockerEnabled": false,
+    "database": {
+      "engine": "postgresql",
+      "version": "17"
+    },
+    "databaseVersion": "17",
+    "stack": [
+      "Redis",
+      "Postgresql",
+      "Docker"
+    ],
+    "repoType": "node",
+    "language": "php",
+    "languageVersion": "8.3",
+    "packageManager": "npm",
+    "framework": "Yii2",
+    "devCommand": "npm run dev",
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": "npm run lint",
+    "deploy": {
+      "docker": false
+    }
+  }
+}
