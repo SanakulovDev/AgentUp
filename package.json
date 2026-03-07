@@ -1,6 +1,6 @@
 {
     "name": "agentup-cli",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "description": "CLI that scaffolds AI agent context files for developer tools and IDEs",
     "type": "module",
     "bin": {
