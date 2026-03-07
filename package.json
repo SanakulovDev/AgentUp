@@ -1,39 +1,39 @@
 {
     "name": "agentup-cli",
-    "version": "0.1.0",
+    "version": "0.1.2",
     "description": "CLI that scaffolds AI agent context files for developer tools and IDEs",
     "type": "module",
     "bin": {
-      "agentup-cli": "dist/index.js"
+        "agentup-cli": "dist/index.js"
     },
     "files": [
-      "dist",
-      "README.md",
-      "LICENSE"
+        "dist",
+        "README.md",
+        "LICENSE"
     ],
     "scripts": {
-      "build": "tsc",
-      "dev": "tsx src/index.ts",
-      "selftest": "tsx src/index.ts __selftest",
-      "prepublishOnly": "npm run build"
+        "build": "tsc",
+        "dev": "tsx src/index.ts",
+        "selftest": "tsx src/index.ts __selftest",
+        "prepublishOnly": "npm run build"
     },
     "dependencies": {
-      "@clack/prompts": "^0.8.2",
-      "picocolors": "^1.1.1"
+        "@clack/prompts": "^0.8.2",
+        "picocolors": "^1.1.1"
     },
     "devDependencies": {
-      "@types/node": "^22.13.10",
-      "tsx": "^4.19.3",
-      "typescript": "^5.8.2"
+        "@types/node": "^22.13.10",
+        "tsx": "^4.19.3",
+        "typescript": "^5.8.2"
     },
     "keywords": [
-      "ai",
-      "agent",
-      "cli",
-      "developer-tools",
-      "cursor",
-      "claude",
-      "agents"
+        "ai",
+        "agent",
+        "cli",
+        "developer-tools",
+        "cursor",
+        "claude",
+        "agents"
     ],
     "license": "MIT"
-  }
+}
