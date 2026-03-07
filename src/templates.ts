@@ -31,6 +31,7 @@ export function renderAgentUpManifest(answers: InitAnswers): Record<string, unkn
     providers: answers.providers,
     ide: answers.ide,
     roles: answers.roles,
+    contentMode: answers.contentMode,
     project: {
       ...answers.projectInfo,
       deploy: {

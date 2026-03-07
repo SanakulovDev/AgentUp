@@ -26,176 +26,171 @@ import {
   renderCursorSkill,
 } from './templates.js';
 
-export function generateAgentUpFiles(answers: InitAnswers): string[] {
-  const written: string[] = [];
-  const ctx = buildTemplateContext(answers);
+export type PlannedFile = {
+  absolutePath: string;
+  relativePath: string;
+  content: string;
+};
 
-  maybeWriteFile(answers, path.join(answers.projectRoot, 'AGENTS.md'), renderAgentsMd(ctx), written);
+export type FileOverrides = Record<string, string>;
+
+type FilePlanner = (filePath: string, content: string) => void;
+
+export function planAgentUpFiles(answers: InitAnswers, overrides: FileOverrides = {}): PlannedFile[] {
+  const plannedByPath = new Map<string, PlannedFile>();
+  const ctx = buildTemplateContext(answers);
+  const addFile: FilePlanner = (filePath, content) => {
+    const relativePath = normalizeRelativePath(
+      path.relative(answers.projectRoot, filePath) || path.basename(filePath),
+    );
+    const overridden = overrides[relativePath];
+    plannedByPath.set(filePath, {
+      absolutePath: filePath,
+      relativePath,
+      content: overridden ?? content,
+    });
+  };
+
+  addFile(path.join(answers.projectRoot, 'AGENTS.md'), renderAgentsMd(ctx));
   if (answers.createClaudeDir) {
-    maybeWriteFile(answers, path.join(answers.projectRoot, 'CLAUDE.md'), renderClaudeRoot(), written);
+    addFile(path.join(answers.projectRoot, 'CLAUDE.md'), renderClaudeRoot());
   }
-  maybeWriteFile(
-    answers,
+  addFile(
     path.join(answers.projectRoot, '.agentup.json'),
     `${JSON.stringify(renderAgentUpManifest(answers), null, 2)}\n`,
-    written,
   );
 
   if (answers.createClaudeDir) {
-    createClaudeScaffold(answers, ctx, written);
+    createClaudeScaffold(answers, ctx, addFile);
   }
 
   if (answers.createCursorDir) {
-    createCursorScaffold(answers, ctx, written);
+    createCursorScaffold(answers, ctx, addFile);
   }
 
-  return written;
+  return [...plannedByPath.values()];
 }
 
 function createClaudeScaffold(
   answers: InitAnswers,
   ctx: TemplateContext,
-  written: string[],
+  addFile: FilePlanner,
 ): void {
   const base = path.join(answers.projectRoot, '.claude');
 
-  const dirs = [
-    base,
-    path.join(base, 'rules'),
-    path.join(base, 'commands'),
-    path.join(base, 'agents'),
-    path.join(base, 'hooks'),
-  ];
-
-  if (answers.roles.includes('plan')) dirs.push(path.join(base, 'skills', 'plan-workflow'));
-  if (answers.roles.includes('review')) dirs.push(path.join(base, 'skills', 'review-workflow'));
-  if (answers.roles.includes('test')) dirs.push(path.join(base, 'skills', 'test-workflow'));
-  if (answers.roles.includes('code')) dirs.push(path.join(base, 'skills', 'code-workflow'));
-
-  dirs.forEach(ensureDir);
-
-  maybeWriteFile(
-    answers,
-    path.join(base, 'settings.json'),
-    `${JSON.stringify(renderClaudeSettings(answers), null, 2)}\n`,
-    written,
-  );
-  maybeWriteFile(
-    answers,
+  addFile(path.join(base, 'settings.json'), `${JSON.stringify(renderClaudeSettings(answers), null, 2)}\n`);
+  addFile(
     path.join(base, 'settings.local.example.json'),
     `${JSON.stringify(renderClaudeSettingsLocalExample(), null, 2)}\n`,
-    written,
   );
-  maybeWriteFile(
-    answers,
-    path.join(base, '.mcp.json'),
-    `${JSON.stringify(renderClaudeMcp(), null, 2)}\n`,
-    written,
-  );
+  addFile(path.join(base, '.mcp.json'), `${JSON.stringify(renderClaudeMcp(), null, 2)}\n`);
 
-  maybeWriteFile(answers, path.join(base, 'rules', 'project-core.md'), renderClaudeProjectRule(ctx), written);
-  maybeWriteFile(answers, path.join(base, 'rules', 'verification.md'), renderClaudeVerificationRule(ctx), written);
-  maybeWriteFile(answers, path.join(base, 'rules', 'agentup-output.md'), renderClaudeOutputRule(), written);
+  addFile(path.join(base, 'rules', 'project-core.md'), renderClaudeProjectRule(ctx));
+  addFile(path.join(base, 'rules', 'verification.md'), renderClaudeVerificationRule(ctx));
+  addFile(path.join(base, 'rules', 'agentup-output.md'), renderClaudeOutputRule());
 
   if (answers.roles.includes('plan')) {
-    maybeWriteFile(answers, path.join(base, 'commands', 'plan.md'), renderClaudeCommand('plan', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'skills', 'plan-workflow', 'SKILL.md'), renderClaudeSkill('plan', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'agents', 'planner.md'), renderClaudeAgent('plan', ctx), written);
+    addFile(path.join(base, 'commands', 'plan.md'), renderClaudeCommand('plan', ctx));
+    addFile(path.join(base, 'skills', 'plan-workflow', 'SKILL.md'), renderClaudeSkill('plan', ctx));
+    addFile(path.join(base, 'agents', 'planner.md'), renderClaudeAgent('plan', ctx));
   }
 
   if (answers.roles.includes('review')) {
-    maybeWriteFile(answers, path.join(base, 'commands', 'review.md'), renderClaudeCommand('review', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'skills', 'review-workflow', 'SKILL.md'), renderClaudeSkill('review', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'agents', 'reviewer.md'), renderClaudeAgent('review', ctx), written);
+    addFile(path.join(base, 'commands', 'review.md'), renderClaudeCommand('review', ctx));
+    addFile(path.join(base, 'skills', 'review-workflow', 'SKILL.md'), renderClaudeSkill('review', ctx));
+    addFile(path.join(base, 'agents', 'reviewer.md'), renderClaudeAgent('review', ctx));
   }
 
   if (answers.roles.includes('test')) {
-    maybeWriteFile(answers, path.join(base, 'commands', 'test.md'), renderClaudeCommand('test', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'skills', 'test-workflow', 'SKILL.md'), renderClaudeSkill('test', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'agents', 'tester.md'), renderClaudeAgent('test', ctx), written);
+    addFile(path.join(base, 'commands', 'test.md'), renderClaudeCommand('test', ctx));
+    addFile(path.join(base, 'skills', 'test-workflow', 'SKILL.md'), renderClaudeSkill('test', ctx));
+    addFile(path.join(base, 'agents', 'tester.md'), renderClaudeAgent('test', ctx));
   }
 
   if (answers.roles.includes('code')) {
-    maybeWriteFile(answers, path.join(base, 'commands', 'implement.md'), renderClaudeCommand('code', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'skills', 'code-workflow', 'SKILL.md'), renderClaudeSkill('code', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'agents', 'implementer.md'), renderClaudeAgent('code', ctx), written);
+    addFile(path.join(base, 'commands', 'implement.md'), renderClaudeCommand('code', ctx));
+    addFile(path.join(base, 'skills', 'code-workflow', 'SKILL.md'), renderClaudeSkill('code', ctx));
+    addFile(path.join(base, 'agents', 'implementer.md'), renderClaudeAgent('code', ctx));
   }
 
-  maybeWriteFile(answers, path.join(base, 'hooks', 'README.md'), renderClaudeHooksReadme(ctx), written);
+  addFile(path.join(base, 'hooks', 'README.md'), renderClaudeHooksReadme(ctx));
 }
 
 function createCursorScaffold(
   answers: InitAnswers,
   ctx: TemplateContext,
-  written: string[],
+  addFile: FilePlanner,
 ): void {
   const base = path.join(answers.projectRoot, '.cursor');
 
-  const dirs = [
-    base,
-    path.join(base, 'rules'),
-    path.join(base, 'commands'),
-    path.join(base, 'agents'),
-    path.join(base, 'docs'),
-    path.join(base, 'hooks'),
-  ];
-
-  if (answers.roles.includes('plan')) dirs.push(path.join(base, 'skills', 'plan-workflow'));
-  if (answers.roles.includes('review')) dirs.push(path.join(base, 'skills', 'review-workflow'));
-  if (answers.roles.includes('test')) dirs.push(path.join(base, 'skills', 'test-workflow'));
-  if (answers.roles.includes('code')) dirs.push(path.join(base, 'skills', 'code-workflow'));
-
-  dirs.forEach(ensureDir);
-
-  maybeWriteFile(answers, path.join(base, 'README.md'), renderCursorReadme(ctx), written);
-  maybeWriteFile(answers, path.join(base, 'mcp.json'), `${JSON.stringify(renderCursorMcp(), null, 2)}\n`, written);
-  maybeWriteFile(answers, path.join(base, 'rules', '00-project-core.mdc'), renderCursorRule('project-core', ctx), written);
-  maybeWriteFile(answers, path.join(base, 'rules', '10-verification.mdc'), renderCursorRule('verification', ctx), written);
-  maybeWriteFile(answers, path.join(base, 'rules', '20-output-style.mdc'), renderCursorRule('output-style', ctx), written);
+  addFile(path.join(base, 'README.md'), renderCursorReadme(ctx));
+  addFile(path.join(base, 'mcp.json'), `${JSON.stringify(renderCursorMcp(), null, 2)}\n`);
+  addFile(path.join(base, 'rules', '00-project-core.mdc'), renderCursorRule('project-core', ctx));
+  addFile(path.join(base, 'rules', '10-verification.mdc'), renderCursorRule('verification', ctx));
+  addFile(path.join(base, 'rules', '20-output-style.mdc'), renderCursorRule('output-style', ctx));
 
   if (answers.roles.includes('plan')) {
-    maybeWriteFile(answers, path.join(base, 'commands', 'plan.md'), renderCursorCommand('plan', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'skills', 'plan-workflow', 'SKILL.md'), renderCursorSkill('plan', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'agents', 'planner.md'), renderCursorAgent('plan', ctx), written);
+    addFile(path.join(base, 'commands', 'plan.md'), renderCursorCommand('plan', ctx));
+    addFile(path.join(base, 'skills', 'plan-workflow', 'SKILL.md'), renderCursorSkill('plan', ctx));
+    addFile(path.join(base, 'agents', 'planner.md'), renderCursorAgent('plan', ctx));
   }
 
   if (answers.roles.includes('review')) {
-    maybeWriteFile(answers, path.join(base, 'commands', 'review.md'), renderCursorCommand('review', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'skills', 'review-workflow', 'SKILL.md'), renderCursorSkill('review', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'agents', 'reviewer.md'), renderCursorAgent('review', ctx), written);
+    addFile(path.join(base, 'commands', 'review.md'), renderCursorCommand('review', ctx));
+    addFile(path.join(base, 'skills', 'review-workflow', 'SKILL.md'), renderCursorSkill('review', ctx));
+    addFile(path.join(base, 'agents', 'reviewer.md'), renderCursorAgent('review', ctx));
   }
 
   if (answers.roles.includes('test')) {
-    maybeWriteFile(answers, path.join(base, 'commands', 'test.md'), renderCursorCommand('test', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'skills', 'test-workflow', 'SKILL.md'), renderCursorSkill('test', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'agents', 'tester.md'), renderCursorAgent('test', ctx), written);
+    addFile(path.join(base, 'commands', 'test.md'), renderCursorCommand('test', ctx));
+    addFile(path.join(base, 'skills', 'test-workflow', 'SKILL.md'), renderCursorSkill('test', ctx));
+    addFile(path.join(base, 'agents', 'tester.md'), renderCursorAgent('test', ctx));
   }
 
   if (answers.roles.includes('code')) {
-    maybeWriteFile(answers, path.join(base, 'commands', 'implement.md'), renderCursorCommand('code', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'skills', 'code-workflow', 'SKILL.md'), renderCursorSkill('code', ctx), written);
-    maybeWriteFile(answers, path.join(base, 'agents', 'implementer.md'), renderCursorAgent('code', ctx), written);
+    addFile(path.join(base, 'commands', 'implement.md'), renderCursorCommand('code', ctx));
+    addFile(path.join(base, 'skills', 'code-workflow', 'SKILL.md'), renderCursorSkill('code', ctx));
+    addFile(path.join(base, 'agents', 'implementer.md'), renderCursorAgent('code', ctx));
   }
 
-  maybeWriteFile(answers, path.join(base, 'docs', 'architecture.md'), renderCursorArchitectureDoc(ctx), written);
-  maybeWriteFile(answers, path.join(base, 'hooks', 'README.md'), renderCursorHooksReadme(ctx), written);
+  addFile(path.join(base, 'docs', 'architecture.md'), renderCursorArchitectureDoc(ctx));
+  addFile(path.join(base, 'hooks', 'README.md'), renderCursorHooksReadme(ctx));
 }
 
-function maybeWriteFile(
-  answers: InitAnswers,
-  filePath: string,
-  content: string,
-  written: string[],
-): void {
-  ensureDir(path.dirname(filePath));
-  const exists = fs.existsSync(filePath);
-
-  if (exists && answers.overwriteMode === 'skip') {
-    return;
+export function writeAgentUpFiles(plannedFiles: PlannedFile[]): string[] {
+  const written: string[] = [];
+  for (const file of plannedFiles) {
+    ensureDir(path.dirname(file.absolutePath));
+    fs.writeFileSync(file.absolutePath, file.content, 'utf8');
+    written.push(file.relativePath);
   }
+  return written;
+}
 
-  fs.writeFileSync(filePath, content, 'utf8');
-  written.push(path.relative(answers.projectRoot, filePath) || path.basename(filePath));
+export function applyOverwriteMode(
+  plannedFiles: PlannedFile[],
+  overwriteMode: InitAnswers['overwriteMode'],
+): PlannedFile[] {
+  return plannedFiles.filter((file) => {
+    const exists = fs.existsSync(file.absolutePath);
+    if (!exists) return true;
+    if (overwriteMode === 'replace') return true;
+    return false;
+  });
+}
+
+export function generateAgentUpFiles(answers: InitAnswers, overrides: FileOverrides = {}): string[] {
+  const plannedFiles = planAgentUpFiles(answers, overrides);
+  const safeMode = answers.overwriteMode === 'ask' ? 'skip' : answers.overwriteMode;
+  const filtered = applyOverwriteMode(plannedFiles, safeMode);
+  return writeAgentUpFiles(filtered);
+}
+
+function normalizeRelativePath(relativePath: string): string {
+  if (path.sep === '/') {
+    return relativePath;
+  }
+  return relativePath.split(path.sep).join('/');
 }
 
 function ensureDir(dirPath: string): void {

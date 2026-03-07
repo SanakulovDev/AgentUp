@@ -36,9 +36,19 @@ The CLI prompts you for:
 - providers (Claude/Codex/Cursor/Gemini/Antigravity)
 - IDE
 - auto-detect or manual mode
+- content mode (`ai` or `template`)
 - roles (`plan`, `review`, `test`, `code`)
-- overwrite mode (`skip` or `replace`)
+- overwrite mode (`ask`, `skip`, or `replace`)
 - project stack details (language, framework, database, commands)
+
+If you choose `ask`, the CLI requests permission before changing each existing file.
+
+For AI mode, store Gemini credentials in `.env`:
+```bash
+cp .env.example .env
+# then edit .env and set your real key
+```
+`agentup-cli` automatically loads `.env` and `.env.local` from the current project folder.
 
 ## Core Commands
 ```bash

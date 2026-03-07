@@ -2,13 +2,15 @@
 import fs from 'fs';
 import process from 'process';
 import path from 'path';
-import { cancel, intro, isCancel, log, multiselect, outro, select, spinner, text, } from '@clack/prompts';
+import { cancel, confirm, intro, isCancel, log, multiselect, outro, select, spinner, text, } from '@clack/prompts';
 import pc from 'picocolors';
 import { ALL_DATABASES, ALL_LANGUAGES, DATABASE_VERSION_PLACEHOLDERS, FRAMEWORKS_BY_LANGUAGE, LANGUAGE_VERSION_PLACEHOLDERS, } from './types.js';
-import { getArgv, getCwd } from './runtime.js';
-import { generateAgentUpFiles } from './generator.js';
+import { getArgv, getCwd, loadEnvFromCwd } from './runtime.js';
+import { planAgentUpFiles, writeAgentUpFiles } from './generator.js';
+import { generateAiOverrides } from './ai.js';
 import { detectProjectInfo, emptyProjectInfo } from './project.js';
 import { normalizeOptional, splitCsv } from './utils.js';
+loadEnvFromCwd();
 const argv = getArgv();
 const command = argv[0];
 void main();
@@ -33,17 +35,39 @@ async function main() {
     }
     intro(renderIntroBanner());
     const answers = await collectAnswers();
-    const s = spinner();
-    s.start('Generating project agent scaffolding...');
+    const planSpinner = spinner();
+    planSpinner.start('Preparing generation plan...');
     try {
-        const writtenFiles = generateAgentUpFiles(answers);
-        s.stop(`Generated ${writtenFiles.length} file(s)`);
+        let plannedFiles = planAgentUpFiles(answers);
+        if (answers.contentMode === 'ai') {
+            planSpinner.stop('Base templates prepared');
+            planSpinner.start('Running AI project review...');
+            const aiResult = await generateAiOverrides(answers.projectRoot, plannedFiles);
+            if (aiResult.warning) {
+                log.warn(aiResult.warning);
+            }
+            if (Object.keys(aiResult.overrides).length > 0) {
+                plannedFiles = planAgentUpFiles(answers, aiResult.overrides);
+            }
+        }
+        planSpinner.stop(`Prepared ${plannedFiles.length} file(s)`);
+        const filesToWrite = await resolveWritePlan(plannedFiles, answers.overwriteMode);
+        if (filesToWrite.length === 0) {
+            log.warn('No files were written (all skipped or declined).');
+            printSummary(answers, []);
+            outro(pc.yellow('Nothing changed.'));
+            return;
+        }
+        const writeSpinner = spinner();
+        writeSpinner.start('Writing project agent scaffolding...');
+        const writtenFiles = writeAgentUpFiles(filesToWrite);
+        writeSpinner.stop(`Generated ${writtenFiles.length} file(s)`);
         log.success('AgentUp initialization complete');
         printSummary(answers, writtenFiles);
         outro(pc.green('Done. Repo has agent context now.'));
     }
     catch (error) {
-        s.stop('Generation failed');
+        planSpinner.stop('Generation failed');
         console.error(pc.red(error instanceof Error ? error.message : String(error)));
         process.exit(1);
     }
@@ -99,6 +123,7 @@ async function collectAnswers() {
     if (isCancel(rootInput))
         abort();
     const projectRoot = path.resolve(String(rootInput));
+    loadEnvFromCwd(projectRoot);
     const providers = await multiselect({
         message: 'Choose AI providers / agent runtimes',
         options: [
@@ -133,6 +158,23 @@ async function collectAnswers() {
     });
     if (isCancel(detectionMode))
         abort();
+    const contentModeInput = await select({
+        message: 'Content generation mode',
+        options: [
+            {
+                label: 'AI project review (recommended)',
+                value: 'ai',
+                hint: process.env.GEMINI_API_KEY ? 'uses GEMINI_API_KEY' : 'requires GEMINI_API_KEY',
+            },
+            { label: 'Template only (offline)', value: 'template' },
+        ],
+    });
+    if (isCancel(contentModeInput))
+        abort();
+    const contentMode = contentModeInput === 'ai' && !process.env.GEMINI_API_KEY ? 'template' : contentModeInput;
+    if (contentModeInput === 'ai' && contentMode === 'template') {
+        log.warn('GEMINI_API_KEY not found. Falling back to template mode.');
+    }
     const roles = await multiselect({
         message: 'Select agent roles to scaffold',
         options: [
@@ -148,6 +190,7 @@ async function collectAnswers() {
     const overwriteMode = await select({
         message: 'When a file already exists',
         options: [
+            { label: 'Ask before overwrite', value: 'ask' },
             { label: 'Skip existing files', value: 'skip' },
             { label: 'Replace generated files', value: 'replace' },
         ],
@@ -164,12 +207,43 @@ async function collectAnswers() {
         providers: providerList,
         ide: ide,
         detectionMode: detectionMode,
+        contentMode,
         roles: roles,
         overwriteMode: overwriteMode,
         projectInfo,
         createClaudeDir: providerList.includes('claude'),
         createCursorDir: providerList.includes('cursor'),
     };
+}
+async function resolveWritePlan(plannedFiles, overwriteMode) {
+    const selected = [];
+    for (const file of plannedFiles) {
+        const exists = fs.existsSync(file.absolutePath);
+        if (!exists) {
+            selected.push(file);
+            continue;
+        }
+        const currentContent = safeReadText(file.absolutePath);
+        if (currentContent === file.content) {
+            continue;
+        }
+        if (overwriteMode === 'skip') {
+            continue;
+        }
+        if (overwriteMode === 'replace') {
+            selected.push(file);
+            continue;
+        }
+        const overwrite = await confirm({
+            message: `${file.relativePath} already exists. Overwrite?`,
+            initialValue: false,
+        });
+        if (isCancel(overwrite))
+            abort();
+        if (overwrite)
+            selected.push(file);
+    }
+    return selected;
 }
 async function refineProjectInfo(projectRoot, base) {
     const name = await text({
@@ -299,6 +373,14 @@ async function refineProjectInfo(projectRoot, base) {
         lintCommand: normalizeOptional(String(lintCommand)),
     };
 }
+function safeReadText(filePath) {
+    try {
+        return fs.readFileSync(filePath, 'utf8');
+    }
+    catch {
+        return '';
+    }
+}
 function abort() {
     cancel('Operation cancelled');
     process.exit(0);
@@ -312,6 +394,7 @@ function printSummary(answers, writtenFiles) {
     log.info(`Language: ${answers.projectInfo.language ?? 'unknown'} ${answers.projectInfo.languageVersion ?? ''}`);
     log.info(`Framework: ${answers.projectInfo.framework ?? 'not specified'}`);
     log.info(`Docker: ${answers.projectInfo.dockerEnabled ? 'yes' : 'no'}`);
+    log.info(`Content mode: ${answers.contentMode}`);
     log.info(`Database: ${answers.projectInfo.database && answers.projectInfo.database !== 'none'
         ? `${answers.projectInfo.database} ${answers.projectInfo.databaseVersion ?? ''}`.trim()
         : 'none'}`);

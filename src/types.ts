@@ -2,7 +2,8 @@ export type Provider = 'claude' | 'codex' | 'gemini' | 'cursor' | 'antigravity';
 export type IDE = 'cursor' | 'vscode' | 'phpstorm' | 'zed' | 'jetbrains';
 export type AgentRole = 'plan' | 'review' | 'test' | 'code';
 export type DetectionMode = 'manual' | 'auto';
-export type OverwriteMode = 'skip' | 'replace';
+export type OverwriteMode = 'skip' | 'ask' | 'replace';
+export type ContentMode = 'template' | 'ai';
 export type RepoType = 'node' | 'php' | 'python' | 'go' | 'rust' | 'java' | 'unknown';
 
 export type Language = 'typescript' | 'javascript' | 'php' | 'python' | 'go' | 'rust' | 'java';
@@ -41,6 +42,7 @@ export type InitAnswers = {
   providers: Provider[];
   ide: IDE;
   detectionMode: DetectionMode;
+  contentMode: ContentMode;
   roles: AgentRole[];
   overwriteMode: OverwriteMode;
   projectInfo: ProjectInfo;

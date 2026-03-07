@@ -79,6 +79,7 @@ export function runSelfTests(): void {
     providers: ['claude', 'cursor'],
     ide: 'cursor',
     detectionMode: 'manual',
+    contentMode: 'template',
     roles: ['plan', 'review'],
     overwriteMode: 'replace',
     createClaudeDir: true,

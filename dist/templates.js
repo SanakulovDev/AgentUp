@@ -28,6 +28,7 @@ export function renderAgentUpManifest(answers) {
         providers: answers.providers,
         ide: answers.ide,
         roles: answers.roles,
+        contentMode: answers.contentMode,
         project: {
             ...answers.projectInfo,
             deploy: {
