@@ -48,6 +48,12 @@ loadEnvFromCwd();
 
 const argv = getArgv();
 const command = argv[0];
+const SIGINT_EXIT_CODE = 130;
+
+process.on('SIGINT', () => {
+  cancel('Ctrl + C pressed. Quit.');
+  process.exit(SIGINT_EXIT_CODE);
+});
 
 void main();
 
@@ -97,7 +103,12 @@ async function main(): Promise<void> {
 
     planSpinner.stop(`Prepared ${plannedFiles.length} file(s)`);
 
-    const filesToWrite = await resolveWritePlan(plannedFiles, answers.overwriteMode);
+    const forceReplacePaths = new Set<string>();
+    if (answers.providers.includes('codex')) {
+      forceReplacePaths.add('AGENTS.md');
+    }
+
+    const filesToWrite = await resolveWritePlan(plannedFiles, answers.overwriteMode, forceReplacePaths);
     if (filesToWrite.length === 0) {
       log.warn('No files were written (all skipped or declined).');
       printSummary(answers, []);
@@ -129,6 +140,9 @@ Usage:
   agentup-cli __selftest
   agentup-cli --version
   agentup-cli --help
+
+Tip:
+  Press Ctrl + C to quit.
 `);
 }
 
@@ -274,6 +288,7 @@ async function collectAnswers(): Promise<InitAnswers> {
 async function resolveWritePlan(
   plannedFiles: PlannedFile[],
   overwriteMode: OverwriteMode,
+  forceReplacePaths: ReadonlySet<string> = new Set<string>(),
 ): Promise<PlannedFile[]> {
   const selected: PlannedFile[] = [];
 
@@ -286,6 +301,11 @@ async function resolveWritePlan(
 
     const currentContent = safeReadText(file.absolutePath);
     if (currentContent === file.content) {
+      continue;
+    }
+
+    if (forceReplacePaths.has(file.relativePath)) {
+      selected.push(file);
       continue;
     }
 
@@ -446,8 +466,8 @@ function safeReadText(filePath: string): string {
 }
 
 function abort(): never {
-  cancel('Operation cancelled');
-  process.exit(0);
+  cancel('Ctrl + C pressed. Quit.');
+  process.exit(SIGINT_EXIT_CODE);
 }
 
 function printSummary(answers: InitAnswers, writtenFiles: string[]): void {

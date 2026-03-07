@@ -4,6 +4,8 @@ import { buildTemplateContext, renderAgentUpManifest, renderAgentsMd, renderClau
 export function planAgentUpFiles(answers, overrides = {}) {
     const plannedByPath = new Map();
     const ctx = buildTemplateContext(answers);
+    const claudeEnabled = answers.providers.includes('claude');
+    const cursorEnabled = answers.providers.includes('cursor');
     const addFile = (filePath, content) => {
         const relativePath = normalizeRelativePath(path.relative(answers.projectRoot, filePath) || path.basename(filePath));
         const overridden = overrides[relativePath];
@@ -14,14 +16,14 @@ export function planAgentUpFiles(answers, overrides = {}) {
         });
     };
     addFile(path.join(answers.projectRoot, 'AGENTS.md'), renderAgentsMd(ctx));
-    if (answers.createClaudeDir) {
+    if (claudeEnabled) {
         addFile(path.join(answers.projectRoot, 'CLAUDE.md'), renderClaudeRoot());
     }
     addFile(path.join(answers.projectRoot, '.agentup.json'), `${JSON.stringify(renderAgentUpManifest(answers), null, 2)}\n`);
-    if (answers.createClaudeDir) {
+    if (claudeEnabled) {
         createClaudeScaffold(answers, ctx, addFile);
     }
-    if (answers.createCursorDir) {
+    if (cursorEnabled) {
         createCursorScaffold(answers, ctx, addFile);
     }
     return [...plannedByPath.values()];

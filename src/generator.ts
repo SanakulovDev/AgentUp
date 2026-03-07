@@ -39,6 +39,8 @@ type FilePlanner = (filePath: string, content: string) => void;
 export function planAgentUpFiles(answers: InitAnswers, overrides: FileOverrides = {}): PlannedFile[] {
   const plannedByPath = new Map<string, PlannedFile>();
   const ctx = buildTemplateContext(answers);
+  const claudeEnabled = answers.providers.includes('claude');
+  const cursorEnabled = answers.providers.includes('cursor');
   const addFile: FilePlanner = (filePath, content) => {
     const relativePath = normalizeRelativePath(
       path.relative(answers.projectRoot, filePath) || path.basename(filePath),
@@ -52,7 +54,7 @@ export function planAgentUpFiles(answers: InitAnswers, overrides: FileOverrides 
   };
 
   addFile(path.join(answers.projectRoot, 'AGENTS.md'), renderAgentsMd(ctx));
-  if (answers.createClaudeDir) {
+  if (claudeEnabled) {
     addFile(path.join(answers.projectRoot, 'CLAUDE.md'), renderClaudeRoot());
   }
   addFile(
@@ -60,11 +62,11 @@ export function planAgentUpFiles(answers: InitAnswers, overrides: FileOverrides 
     `${JSON.stringify(renderAgentUpManifest(answers), null, 2)}\n`,
   );
 
-  if (answers.createClaudeDir) {
+  if (claudeEnabled) {
     createClaudeScaffold(answers, ctx, addFile);
   }
 
-  if (answers.createCursorDir) {
+  if (cursorEnabled) {
     createCursorScaffold(answers, ctx, addFile);
   }
 

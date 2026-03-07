@@ -1,6 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { planAgentUpFiles } from './generator.js';
 import {
   renderAgentsMd,
   buildTemplateContext,
@@ -105,6 +106,32 @@ export function runSelfTests(): void {
   assert(agents.includes('Framework: Yii2'), 'renderAgentsMd should include framework');
   assert(agents.includes('Deploy with Docker: yes'), 'renderAgentsMd should include docker');
   assert(agents.includes('Database: postgresql 17'), 'renderAgentsMd should include database');
+
+  const codexOnlyPlan = planAgentUpFiles({
+    ...answers,
+    providers: ['codex'],
+    createCursorDir: true,
+    createClaudeDir: true,
+  });
+  assert(
+    !codexOnlyPlan.some((file) => file.relativePath.startsWith('.cursor/')),
+    'planAgentUpFiles should not generate .cursor files when cursor provider is not selected',
+  );
+  assert(
+    codexOnlyPlan.some((file) => file.relativePath === 'AGENTS.md'),
+    'planAgentUpFiles should include AGENTS.md for codex provider',
+  );
+
+  const cursorOnlyPlan = planAgentUpFiles({
+    ...answers,
+    providers: ['cursor'],
+    createCursorDir: false,
+    createClaudeDir: false,
+  });
+  assert(
+    cursorOnlyPlan.some((file) => file.relativePath.startsWith('.cursor/')),
+    'planAgentUpFiles should generate .cursor files when cursor provider is selected',
+  );
 
   console.log('All self-tests passed.');
 }

@@ -13,6 +13,11 @@ import { normalizeOptional, splitCsv } from './utils.js';
 loadEnvFromCwd();
 const argv = getArgv();
 const command = argv[0];
+const SIGINT_EXIT_CODE = 130;
+process.on('SIGINT', () => {
+    cancel('Ctrl + C pressed. Quit.');
+    process.exit(SIGINT_EXIT_CODE);
+});
 void main();
 async function main() {
     if (command === '__selftest') {
@@ -51,7 +56,11 @@ async function main() {
             }
         }
         planSpinner.stop(`Prepared ${plannedFiles.length} file(s)`);
-        const filesToWrite = await resolveWritePlan(plannedFiles, answers.overwriteMode);
+        const forceReplacePaths = new Set();
+        if (answers.providers.includes('codex')) {
+            forceReplacePaths.add('AGENTS.md');
+        }
+        const filesToWrite = await resolveWritePlan(plannedFiles, answers.overwriteMode, forceReplacePaths);
         if (filesToWrite.length === 0) {
             log.warn('No files were written (all skipped or declined).');
             printSummary(answers, []);
@@ -81,6 +90,9 @@ Usage:
   agentup-cli __selftest
   agentup-cli --version
   agentup-cli --help
+
+Tip:
+  Press Ctrl + C to quit.
 `);
 }
 function printVersion() {
@@ -215,7 +227,7 @@ async function collectAnswers() {
         createCursorDir: providerList.includes('cursor'),
     };
 }
-async function resolveWritePlan(plannedFiles, overwriteMode) {
+async function resolveWritePlan(plannedFiles, overwriteMode, forceReplacePaths = new Set()) {
     const selected = [];
     for (const file of plannedFiles) {
         const exists = fs.existsSync(file.absolutePath);
@@ -225,6 +237,10 @@ async function resolveWritePlan(plannedFiles, overwriteMode) {
         }
         const currentContent = safeReadText(file.absolutePath);
         if (currentContent === file.content) {
+            continue;
+        }
+        if (forceReplacePaths.has(file.relativePath)) {
+            selected.push(file);
             continue;
         }
         if (overwriteMode === 'skip') {
@@ -382,8 +398,8 @@ function safeReadText(filePath) {
     }
 }
 function abort() {
-    cancel('Operation cancelled');
-    process.exit(0);
+    cancel('Ctrl + C pressed. Quit.');
+    process.exit(SIGINT_EXIT_CODE);
 }
 function printSummary(answers, writtenFiles) {
     console.log();
