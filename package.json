@@ -1,6 +1,17 @@
 {
     "name": "agentup-cli",
     "version": "0.1.7",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/SanakulovDev/AgentUp.git"
+    },
+    "bugs": {
+        "url": "https://github.com/SanakulovDev/AgentUp/issues"
+    },
+    "homepage": "https://github.com/SanakulovDev/AgentUp#readme",
+    "publishConfig": {
+        "provenance": true
+    },
     "description": "CLI that scaffolds AI agent context files for developer tools and IDEs",
     "type": "module",
     "bin": {
