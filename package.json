@@ -33,11 +33,11 @@
         "prepublishOnly": "npm run build"
     },
     "dependencies": {
-        "@clack/prompts": "^0.8.2",
+        "@clack/prompts": "^1.1.0",
         "picocolors": "^1.1.1"
     },
     "devDependencies": {
-        "@types/node": "^22.13.10",
+        "@types/node": "^25.3.5",
         "tsx": "^4.19.3",
         "typescript": "^5.8.2"
     },
