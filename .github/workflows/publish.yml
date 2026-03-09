@@ -48,13 +48,17 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # GitHub Packages-ga yuklash qismi
-      - name: Setup Node.js for GitHub Packages
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@SanakulovDev' # O'zingizning GitHub username-ingizni yozing
+      # 2. GitHub Packages-ga yuklash (GitHub profilingizda ko'rinishi uchun)
+      - name: Publish to GitHub Packages
+        if: success() # Faqat NPM-ga muvaffaqiyatli yuklansa ishlaydi
+        run: |
+          # Diqqat: GitHub Packages uchun paket nomi @SanakulovDev/agentup-cli bo'lishi shart.
+          # Agar package.json da nom shunchaki "agentup-cli" bo'lsa, quyidagi buyruq nomini vaqtincha o'zgartirib yuklaydi:
+          npm pkg set name=@SanakulovDev/agentup-cli
+          npm config set //npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}
+          npm publish --registry=https://npm.pkg.github.com
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to GitHub Packages
         run: npm publish
