@@ -1,4 +1,4 @@
-name: Publish to npm
+name: Publish to npm and GitHub
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  packages: write  # GitHub Packages-ga yozish uchun ruxsat
   id-token: write
 
 jobs:
@@ -41,10 +42,20 @@ jobs:
             exit 1
           fi
 
-      - name: Publish package
+      # 1. NPM-ga yuklash (Mavjud qadam)
+      - name: Publish to NPM
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # 2. GitHub Packages-ga yuklash (Yangi qo'shilgan qadam)
+      - name: Publish to GitHub Packages
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" > ~/.npmrc
+          npm publish --registry=https://npm.pkg.github.com
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Notify Telegram about successful publish
         if: success()
         run: |
@@ -52,4 +63,3 @@ jobs:
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d parse_mode="HTML" \
             -d text="✅ <b>AgentUp published successfully!</b>%0A%0A🌐 <a href='https://agentup.uz'>AgentUp.uz</a>%0A👤 ${{ github.actor }}%0A📝 ${{ github.event.head_commit.message }}%0A🕐 $(TZ='Asia/Tashkent' date +'%Y-%m-%d %H:%M') (Toshkent)"
-
