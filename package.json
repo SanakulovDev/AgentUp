@@ -12,7 +12,7 @@
     "publishConfig": {
         "provenance": true
     },
-    "description": "CLI that scaffolds AI agent context files for developer tools and IDEs",
+    "description": "CLI to generate AGENTS.md and AI coding agent scaffolding for Claude Code, Cursor, Codex, and Gemini",
     "type": "module",
     "bin": {
         "agentup-cli": "dist/index.js"
@@ -42,13 +42,22 @@
         "typescript": "^5.8.2"
     },
     "keywords": [
+        "agentup",
+        "agentup-cli",
+        "agents-md",
         "ai",
-        "agent",
+        "ai-agent",
+        "ai-coding-agent",
         "cli",
+        "scaffolding",
         "developer-tools",
+        "developer-experience",
+        "context-engineering",
+        "prompt-engineering",
+        "claude-code",
         "cursor",
-        "claude",
-        "agents"
+        "codex",
+        "gemini"
     ],
     "license": "MIT"
 }
