@@ -5,7 +5,7 @@
 <h1 align="center">AgentUp CLI</h1>
 
 <p align="center">
-  AI agent context generator for <strong>AGENTS.md</strong>, <strong>Claude Code</strong>, <strong>Cursor</strong>, <strong>Codex</strong>, and <strong>Gemini</strong> workflows.
+  Generate <strong>AGENTS.md</strong> and AI coding-agent scaffolding for <strong>Claude Code</strong>, <strong>Cursor</strong>, <strong>Codex</strong>, and <strong>Gemini</strong>.
 </p>
 
 <p align="center">
@@ -14,33 +14,50 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license"></a>
 </p>
 
-`agentup-cli` helps teams bootstrap consistent AI coding-agent instructions in any repository.
-Instead of manually writing agent rules every time, run one command and generate production-ready context files.
+`agentup-cli` is an interactive CLI for setting up AI agent instructions inside a repository.
+It helps you avoid rewriting the same context files in every project.
 
-## GitHub About SEO (Recommended)
-Suggested repository description:
-```text
-CLI to generate AGENTS.md and AI coding agent scaffolding for Claude Code, Cursor, Codex, and Gemini.
+If you searched for `agentup`, `AgentUp`, `agent up`, `agentupcli`, or `agentup-cli`, this is the official project.
+
+## What You Get
+- Fast setup for AI coding agents in existing or new repositories.
+- Consistent `AGENTS.md` and provider-specific scaffolding.
+- Auto-detected project context (language, framework, database, package manager).
+- Reusable role workflows: `plan`, `review`, `test`, `code`.
+
+## Install
+Global:
+```bash
+npm install -g agentup-cli
 ```
 
-Suggested GitHub topics:
-```text
-agentup, agentup-cli, agents-md, ai-agent, ai-coding-agent, cli, claude-code, cursor, codex, gemini, prompt-engineering, context-engineering
+Without global install:
+```bash
+npx agentup-cli@latest init
 ```
 
-## Why AgentUp
-- Generate `AGENTS.md` automatically for AI coding assistants.
-- Scaffold provider-specific configs for Claude Code and Cursor.
-- Keep agent roles consistent (`plan`, `review`, `test`, `code`) across repos.
-- Detect project stack (language, framework, database, package manager) to produce relevant defaults.
-- Reduce onboarding time for new contributors and AI-assisted workflows.
+## Quick Start (2 Minutes)
+```bash
+cd your-project
+agentup-cli init
+```
 
-## What AgentUp Generates
-Always generated:
+The CLI asks you to choose:
+- providers: `Claude`, `Codex`, `Cursor`, `Gemini`, `Antigravity`
+- IDE
+- context source: auto-detect or manual
+- content mode: `ai` or `template`
+- roles: `plan`, `review`, `test`, `code`
+- overwrite behavior: `ask`, `skip`, `replace`
+
+If overwrite mode is `ask`, AgentUp prompts before changing existing files.
+
+## Generated Files
+Always:
 - `AGENTS.md`
 - `.agentup.json`
 
-Generated when `Claude Code` is selected:
+When `Claude` is selected:
 - `CLAUDE.md`
 - `.claude/settings.json`
 - `.claude/rules/*`
@@ -48,7 +65,7 @@ Generated when `Claude Code` is selected:
 - `.claude/skills/*`
 - `.claude/agents/*`
 
-Generated when `Cursor` is selected:
+When `Cursor` is selected:
 - `.cursor/README.md`
 - `.cursor/rules/*`
 - `.cursor/commands/*`
@@ -56,35 +73,9 @@ Generated when `Cursor` is selected:
 - `.cursor/agents/*`
 - `.cursor/docs/architecture.md`
 
-## Install
-Global install:
-```bash
-npm install -g agentup-cli
-```
-
-Run without global install:
-```bash
-npx agentup-cli@latest init
-```
-
-## Quick Start
-```bash
-cd your-project
-agentup-cli init
-```
-
-The interactive CLI asks for:
-- provider targets: `Claude`, `Codex`, `Cursor`, `Gemini`, `Antigravity`
-- primary IDE
-- context source: auto-detect or manual
-- content mode: `ai` or `template`
-- roles: `plan`, `review`, `test`, `code`
-- overwrite mode: `ask`, `skip`, `replace`
-
-If overwrite mode is `ask`, AgentUp asks before changing each existing file.
-
-## AI Mode (Gemini)
-`ai` mode uses Gemini review to improve generated context.
+## AI Mode vs Template Mode
+`template` mode works fully offline and uses built-in templates.
+`ai` mode uses Gemini-based review to improve generated context.
 
 ```bash
 cp .env.example .env
@@ -102,12 +93,6 @@ agentup-cli --version   # Show installed version
 agentup-cli --help      # Show command help
 ```
 
-Check latest npm version:
-```bash
-agentup-cli --version
-npm view agentup-cli@latest version
-```
-
 ## Example Output
 ```text
 your-project/
@@ -118,7 +103,7 @@ your-project/
 └── .cursor/                 # if Cursor selected
 ```
 
-## Local Development
+## Local Development (Project Maintainers)
 ```bash
 npm install
 npm run dev -- init
@@ -127,17 +112,17 @@ npm run selftest
 node dist/index.js init
 ```
 
-## Automated npm Release
-GitHub Actions workflow: `.github/workflows/publish.yml`
+## Release Flow
+Workflow: `.github/workflows/publish.yml`
 
-Release by pushing a version tag:
+Publish by pushing a version tag:
 ```bash
 VERSION=$(npm run -s version:show)
 git tag "v$VERSION"
 git push origin "v$VERSION"
 ```
 
-Workflow checks:
+The workflow runs:
 - `npm ci`
 - `npm run build`
 - tag version matches `package.json` version
@@ -154,13 +139,16 @@ npm run release:major
 
 ## FAQ
 ### What is AgentUp CLI?
-AgentUp is an AI agent setup CLI that generates repository instructions and provider-specific scaffolding for coding assistants.
+AgentUp is a CLI that generates AI coding-agent context files for your repository.
 
 ### Can I use AgentUp for Codex, Claude Code, and Cursor?
-Yes. AgentUp supports multi-provider generation in one run.
+Yes. One run can scaffold multiple providers.
 
 ### Does AgentUp work in existing repositories?
 Yes. Use overwrite mode `ask` or `skip` to safely adopt it in active projects.
+
+### Is AgentUp the same as "agent up" or "agentupcli"?
+Yes. `AgentUp`, `agent up`, `agentupcli`, and `agentup-cli` refer to this same CLI project.
 
 ## License
 MIT
